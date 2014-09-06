@@ -29,23 +29,23 @@ namespace ZuneTune
 
         static void Main(string[] args)
         {
-            int num1 = 0;
-            int num2 = 0;
-            int num3 = 0;
-            int num4 = 0;
-            DateTimeOffset dateTimeOffset = DateTimeOffset.MinValue; //Was DateTime.MinValue cast to DateTimeOffset (not valid) before, WHY!?
+            int invalidLinksCount = 0;
+            int failedLinksCount = 0;
+            int invalidTweetsCount = 0;
+            int duplicateCount = 0;
+            DateTimeOffset lastRun = DateTimeOffset.MinValue; //Was DateTime.MinValue cast to DateTimeOffset (not valid) before, WHY!?
             if (System.IO.File.Exists("lastrun.txt"))
-                dateTimeOffset = DateTimeOffset.Parse(System.IO.File.ReadAllText("lastrun.txt"));
-            List<string> list1 = new List<string>();
+                lastRun = DateTimeOffset.Parse(System.IO.File.ReadAllText("lastrun.txt"));
+            List<string> trackMediaIdList = new List<string>();
             Console.WriteLine("#ZuneTune Twitter Playlist Generator v0.1");
             Console.WriteLine("===========================================================");
             Console.WriteLine("Loading tweets...");
             try
             {
-                using (XmlReader reader = XmlReader.Create(string.Format(Program.TWITTERSEARCH, (object)HttpUtility.UrlEncode("#ZuneTune"))))
+                using (XmlReader reader = XmlReader.Create(string.Format(TWITTERSEARCH, HttpUtility.UrlEncode("#ZuneTune"))))
                 {
                     SyndicationFeed syndicationFeed = SyndicationFeed.Load(reader);
-                    if (syndicationFeed.LastUpdatedTime <= dateTimeOffset)
+                    if (syndicationFeed.LastUpdatedTime <= lastRun)
                     {
                         Console.WriteLine("No updates since last run.");
                         Console.WriteLine("Press [Enter]");
@@ -54,72 +54,74 @@ namespace ZuneTune
                     }
                     else
                     {
-                        dateTimeOffset = syndicationFeed.LastUpdatedTime;
-                        Console.WriteLine("Found {0} tweets, loading details...", (object)Enumerable.Count<SyndicationItem>(syndicationFeed.Items));
+                        lastRun = syndicationFeed.LastUpdatedTime;
+                        Console.WriteLine("Found {0} tweets, loading details...", syndicationFeed.Items.Count());
                         foreach (SyndicationItem syndicationItem in syndicationFeed.Items)
                         {
                             string text = syndicationItem.Title.Text;
-                            int startIndex1 = text.IndexOf("http://");
-                            List<string> list2 = new List<string>();
-                            if (startIndex1 > -1)
+                            int urlStart = text.IndexOf("http://");
+                            List<string> urlList = new List<string>();
+                            if (urlStart > -1)
                             {
-                                int num5 = text.IndexOf(" ", startIndex1);
-                                if (num5 == -1)
-                                    num5 = text.Length;
-                                string str = text.Substring(startIndex1, num5 - startIndex1);
-                                if (!list2.Contains(str))
+                                int urlEnd = text.IndexOf(" ", urlStart);
+                                if (urlEnd == -1)
                                 {
-                                    list2.Add(str);
+                                    urlEnd = text.Length;
+                                }
+                                string link = text.Substring(urlStart, urlEnd - urlStart);
+                                if (!urlList.Contains(link))
+                                {
+                                    urlList.Add(link);
                                 }
                                 else
                                 {
-                                    ++num4;
+                                    ++duplicateCount;
                                     Console.Write("-");
                                 }
                             }
                             else
                             {
-                                ++num3;
+                                ++invalidTweetsCount;
                                 Console.Write("-");
                             }
-                            foreach (string url in list2)
+                            foreach (string url in urlList)
                             {
-                                string expandedUrl = Program.GetExpandedUrl(url);
+                                string expandedUrl = GetExpandedUrl(url);
                                 if (string.IsNullOrEmpty(expandedUrl))
                                 {
-                                    ++num2;
+                                    ++failedLinksCount;
                                     Console.Write("-");
                                 }
                                 else
                                 {
-                                    int num5 = expandedUrl.IndexOf("mid=");
-                                    if (num5 > -1)
+                                    int midPosition = expandedUrl.IndexOf("mid=");
+                                    if (midPosition > -1)
                                     {
-                                        int startIndex2 = num5 + 4;
-                                        int num6 = expandedUrl.IndexOf("&mtype=Track", startIndex2);
-                                        if (num6 > -1)
+                                        int midStart = midPosition + 4;
+                                        int midEnd = expandedUrl.IndexOf("&mtype=Track", midStart); //not very intelligent URL parsing...
+                                        if (midEnd > -1)
                                         {
-                                            string str = expandedUrl.Substring(startIndex2, num6 - startIndex2);
-                                            if (!Enumerable.Contains<string>((IEnumerable<string>)list1, str, (IEqualityComparer<string>)StringComparer.InvariantCultureIgnoreCase))
+                                            string mid = expandedUrl.Substring(midStart, midEnd - midStart);
+                                            if (!trackMediaIdList.Contains(mid, StringComparer.InvariantCultureIgnoreCase))
                                             {
-                                                list1.Add(str);
+                                                trackMediaIdList.Add(mid);
                                                 Console.Write("*");
                                             }
                                             else
                                             {
-                                                ++num4;
+                                                ++duplicateCount;
                                                 Console.Write("-");
                                             }
                                         }
                                         else
                                         {
-                                            ++num1;
+                                            ++invalidLinksCount;
                                             Console.Write("-");
                                         }
                                     }
                                     else
                                     {
-                                        ++num1;
+                                        ++invalidLinksCount;
                                         Console.Write("-");
                                     }
                                 }
@@ -129,27 +131,27 @@ namespace ZuneTune
                         Console.WriteLine("=========================================");
                     }
                 }
-                Console.WriteLine("Building playlist for {0} tracks...", (object)list1.Count);
-                int num7 = 0;
-                if (list1.Count > 0)
+                Console.WriteLine("Building playlist for {0} tracks...", (object)trackMediaIdList.Count);
+                int noRightsCount = 0;
+                if (trackMediaIdList.Count > 0)
                 {
-                    Console.WriteLine("Writing playlist to: {0}", (object)(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\Zune\\Playlists\\ZuneTune.zpl"));
+                    Console.WriteLine("Writing playlist to: {0}", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\Zune\\Playlists\\ZuneTune.zpl");
                     using (StreamWriter streamWriter = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\Zune\\Playlists\\ZuneTune.zpl"))
                     {
-                        double num5 = 0.0;
+                        double playlistDuration = 0.0;
                         StringBuilder stringBuilder = new StringBuilder(1024);
-                        foreach (string trackId in list1)
+                        foreach (string trackId in trackMediaIdList)
                         {
                             Track track = new Track(trackId);
                             if (track.HasRights)
                             {
-                                num5 += track.Duration.TotalSeconds;
+                                playlistDuration += track.Duration.TotalSeconds;
                                 stringBuilder.AppendLine(track.ToString());
                                 Console.Write("*");
                             }
                             else
                             {
-                                ++num7;
+                                ++noRightsCount;
                                 Console.Write("-");
                             }
                         }
@@ -158,29 +160,29 @@ namespace ZuneTune
                         streamWriter.WriteLine("<head>");
                         streamWriter.WriteLine("<guid>{418AA80C-84DC-4C8B-AD60-B4719D8E4C57}</guid>");
                         streamWriter.WriteLine("<meta name=\"generator\" content=\"ZuneTune -- 1.0\" />");
-                        streamWriter.WriteLine("<meta name=\"itemCount\" content=\"{0}\" />", (object)(list1.Count - num7));
-                        streamWriter.WriteLine("<meta name=\"totalDuration\" content=\"" + ((long)num5).ToString() + "\" />");
+                        streamWriter.WriteLine("<meta name=\"itemCount\" content=\"{0}\" />", (trackMediaIdList.Count - noRightsCount));
+                        streamWriter.WriteLine("<meta name=\"totalDuration\" content=\"" + playlistDuration.ToString() + "\" />");
                         streamWriter.WriteLine("<meta name=\"averageRating\" content=\"0\" />");
                         streamWriter.WriteLine("<meta name=\"creatorId\" content=\"{ECF302E2-CFFE-18C2-18E5-6437AE8B29DD}\" />");
                         streamWriter.WriteLine("<title>ZuneTune</title>");
                         streamWriter.WriteLine("</head>");
                         streamWriter.WriteLine("<body>");
                         streamWriter.WriteLine("<seq>");
-                        streamWriter.Write(((object)stringBuilder).ToString());
+                        streamWriter.Write(stringBuilder.ToString());
                         streamWriter.WriteLine("</seq>");
                         streamWriter.WriteLine("</body>");
                         streamWriter.WriteLine("</smil>");
                         Console.WriteLine(" - ZuneTune Playlist complete!");
                         Console.WriteLine("=========================================");
-                        Console.WriteLine("Total Tracks: {0}", (object)(list1.Count - num7));
-                        Console.WriteLine("Duplicate Tracks: {0}", (object)num4);
-                        Console.WriteLine("No Rights: {0}", (object)num7);
-                        Console.WriteLine("Invalid Tweets: {0}", (object)num3);
-                        Console.WriteLine("Invalid Links: {0}", (object)num1);
-                        Console.WriteLine("Failed Links: {0}", (object)num2);
+                        Console.WriteLine("Total Tracks: {0}", (trackMediaIdList.Count - noRightsCount));
+                        Console.WriteLine("Duplicate Tracks: {0}", duplicateCount);
+                        Console.WriteLine("No Rights: {0}", noRightsCount);
+                        Console.WriteLine("Invalid Tweets: {0}", invalidTweetsCount);
+                        Console.WriteLine("Invalid Links: {0}", invalidLinksCount);
+                        Console.WriteLine("Failed Links: {0}", failedLinksCount);
                     }
                 }
-                System.IO.File.WriteAllText("lastrun.txt", dateTimeOffset.ToString());
+                System.IO.File.WriteAllText("lastrun.txt", lastRun.ToString());
             }
             catch (Exception e)
             {
