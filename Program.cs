@@ -9,11 +9,23 @@ using System.Text;
 using System.Web;
 using System.Xml;
 
+/* *******************************************
+ * #ZuneTune Twitter Playlist Generator v0.1
+ *  -- created by @Tyren in Summer 2009
+ * 
+ * Code reproduced through reverse engineering 
+ * executable made available at: bit.ly/hL7QY
+ * 
+ * Code slightly modified to work w/ .NET 4.5
+ * All runtime bugs retained, so far.
+ * 
+ *********************************************/
+
 namespace ZuneTune
 {
     class Program
     {
-        static string TWITTERSEARCH = "http://search.twitter.com/search.atom?q={0}&rpp=100";
+        static string TWITTERSEARCH = "http://search.twitter.com/search.atom?q={0}&rpp=100"; //Twitter API v1 is deprecated, will no longer work.
 
         static void Main(string[] args)
         {
@@ -21,11 +33,11 @@ namespace ZuneTune
             int num2 = 0;
             int num3 = 0;
             int num4 = 0;
-            DateTimeOffset dateTimeOffset = (DateTimeOffset)DateTime.MinValue;
+            DateTimeOffset dateTimeOffset = DateTimeOffset.MinValue; //Was DateTime.MinValue cast to DateTimeOffset (not valid) before, WHY!?
             if (System.IO.File.Exists("lastrun.txt"))
                 dateTimeOffset = DateTimeOffset.Parse(System.IO.File.ReadAllText("lastrun.txt"));
             List<string> list1 = new List<string>();
-            Console.WriteLine("#ZuneTune Twitter Playlist Generator v0.1 created by @Tyren");
+            Console.WriteLine("#ZuneTune Twitter Playlist Generator v0.1");
             Console.WriteLine("===========================================================");
             Console.WriteLine("Loading tweets...");
             try
@@ -170,9 +182,12 @@ namespace ZuneTune
                 }
                 System.IO.File.WriteAllText("lastrun.txt", dateTimeOffset.ToString());
             }
-            catch
+            catch (Exception e)
             {
-                Console.WriteLine("Twitter is over capacity, try again later.");
+                if (e != null)
+                {
+                    Console.WriteLine("Twitter is over capacity, try again later.");
+                }
             }
             Console.WriteLine("=========================================");
             Console.WriteLine("Press [Enter]");
@@ -189,12 +204,18 @@ namespace ZuneTune
             try
             {
                 using (HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse())
+                {
                     return ((NameValueCollection)httpWebResponse.Headers)["Location"];
+                }
             }
-            catch
+            catch (Exception e)
             {
+                if (e != null) //more convenient for debugging, construct avoids compiler warning
+                {
+
+                }
             }
-            return (string)null;
+            return null;
         }
     }
 }
