@@ -1,10 +1,4 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ZuneTune.Track
-// Assembly: ZuneTune, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: D51F632B-29C0-47E3-8196-9F622D280AE8
-// Assembly location: C:\Users\Dorian\Documents\Visual Studio 2013\Projects\ZuneTune\ZuneTune.exe
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel.Syndication;
@@ -32,7 +26,7 @@ namespace ZuneTune
         {
             get
             {
-                return this.Rights != null && this.Rights.Right != null && Enumerable.Count<Right>((IEnumerable<Right>)this.Rights.Right) > 0;
+                return this.Rights != null && this.Rights.Right != null && this.Rights.Right.Count() > 0;
             }
         }
 
@@ -51,9 +45,9 @@ namespace ZuneTune
                     this.Title = syndicationItem.Title.Text;
                 }
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Console.WriteLine("\nOops: {0}", (object)((object)ex).ToString());
+                Console.WriteLine("\nOops: {0}", e.ToString());
             }
         }
 
