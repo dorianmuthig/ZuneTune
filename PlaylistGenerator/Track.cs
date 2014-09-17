@@ -6,7 +6,7 @@ using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace ZuneTune
+namespace ZuneTune.PlaylistGenerator
 {
     public class Track
     {

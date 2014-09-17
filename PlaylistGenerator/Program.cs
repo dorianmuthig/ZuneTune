@@ -21,7 +21,7 @@ using System.Xml;
  * 
  *********************************************/
 
-namespace ZuneTune
+namespace ZuneTune.PlaylistGenerator
 {
     class Program
     {

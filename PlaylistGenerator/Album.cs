@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace ZuneTune
+namespace ZuneTune.PlaylistGenerator
 {
     [XmlRoot("album", Namespace = "http://schemas.zune.net/catalog/music/2007/10")]
     public class Album
