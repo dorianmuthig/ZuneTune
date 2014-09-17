@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZuneTune", "ZuneTune.csproj", "{A6ED517C-8F24-4FBF-98C5-71D12B1A3863}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaylistGenerator", "PlaylistGenerator\PlaylistGenerator.csproj", "{A6ED517C-8F24-4FBF-98C5-71D12B1A3863}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
